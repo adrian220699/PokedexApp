@@ -7,4 +7,6 @@ data class  Pokemon (
     val imageUrlPokemon : String
 
 
-)
+) {
+    constructor(id: Int, name: String, imageUrl: String) : this()
+}
