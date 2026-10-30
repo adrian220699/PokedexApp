@@ -13,9 +13,9 @@ fun PokemonItemDto.toDomain(): Pokemon {
 
     return Pokemon (
 
-        id = id,
-        name = name.replaceFirstChar { it.uppercase() },
-        imageUrl = imageUrl
+        idPokemon = id,
+        namePokemon = name.replaceFirstChar { it.uppercase() },
+        imageUrlPokemon = imageUrl
 
 
     )
