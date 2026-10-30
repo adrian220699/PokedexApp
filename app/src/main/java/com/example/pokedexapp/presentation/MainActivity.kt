@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -27,6 +28,10 @@ import com.example.pokedexapp.domain.model.Pokemon
 import com.example.pokedexapp.domain.usecase.GetPokemonsUseCase
 import com.example.pokedexapp.presentation.PokemonUiState
 import com.example.pokedexapp.presentation.PokemonViewModel
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.Dialog
 
 class MainActivity : ComponentActivity() {
 
@@ -37,6 +42,7 @@ class MainActivity : ComponentActivity() {
         val repository = PokemonRepositoryImpl(RetrofitClient.pokeApiService)
         val useCase = GetPokemonsUseCase(repository)
         val viewModel = PokemonViewModel(useCase)
+
 
         setContent {
             MaterialTheme {
@@ -58,6 +64,9 @@ fun PokedexScreen(
     state: PokemonUiState,
     onRetry: () -> Unit
 ) {
+    var pokemonSeleccionado by remember {
+        mutableStateOf<Pokemon?>(null)
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -96,8 +105,66 @@ fun PokedexScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(state.pokemons, key = { it.idPokemon }) { pokemon ->
-                            PokemonCard(pokemon = pokemon)
+                            PokemonCard(
+                                pokemon = pokemon,
+                                onClick = {
+                                    pokemonSeleccionado = pokemon
+                                }
+                            )
+
                         }
+                    }
+                }
+            }
+        }
+    }
+    pokemonSeleccionado?.let { pokemon ->
+        Dialog(
+            onDismissRequest = {
+                pokemonSeleccionado = null
+            }
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "#%03d".format(pokemon.idPokemon),
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+
+                    AsyncImage(
+                        model = pokemon.imageUrlPokemon,
+                        contentDescription = pokemon.namePokemon,
+                        modifier = Modifier.size(240.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = pokemon.namePokemon.uppercase(),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            pokemonSeleccionado = null
+                        }
+                    ) {
+                        Text("Cerrar")
                     }
                 }
             }
@@ -106,14 +173,21 @@ fun PokedexScreen(
 }
 
 @Composable
-fun PokemonCard(pokemon: Pokemon) {
+fun PokemonCard(
+    pokemon: Pokemon,
+    onClick: () -> Unit
+) {
     Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth()
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -126,6 +200,7 @@ fun PokemonCard(pokemon: Pokemon) {
                 color = Color.Gray,
                 modifier = Modifier.align(Alignment.End)
             )
+
             AsyncImage(
                 model = pokemon.imageUrlPokemon,
                 contentDescription = pokemon.namePokemon,
@@ -133,7 +208,9 @@ fun PokemonCard(pokemon: Pokemon) {
                     .size(100.dp)
                     .clip(RoundedCornerShape(8.dp))
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = pokemon.namePokemon,
                 fontWeight = FontWeight.Bold,
